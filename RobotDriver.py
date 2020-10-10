@@ -2,6 +2,8 @@ import time
 from typing import Tuple, Union
 
 import numpy as np
+from adafruit_motorkit import MotorKit
+
 
 MM_IN_M = 1000
 S_IN_MIN = 60
@@ -28,22 +30,35 @@ class RobotDriver:
         self.__encoder_resolution = encoder_resolution
         self.__max_angular_velocity_rpm = max_angular_velocity
 
-        self.__motor_right = None
-        self.__motor_left = None
+        kit = MotorKit(0x40)
+        self.__motor_right = kit.motor2 # reversed direction
+        self.__motor_left = kit.motor1 # proper direction
 
         self.__circumference_m = np.pi * self.__wheel_diameter_mm / MM_IN_M
         self.__max_linear_velocity_rads = 2 * np.pi * self.__max_angular_velocity_rpm / S_IN_MIN
         self.__max_linear_velocity_ms = self.convert_angular_to_linear_velocity(self.__max_linear_velocity_rads)
+        print(self.__max_linear_velocity_ms)
+
+    def run_motor_left(self, scaled_velocity):
+        self.__motor_left.throttle = scaled_velocity
+
+    def run_motor_right(self, scaled_velocity):
+        self.__motor_right.throttle = - scaled_velocity
 
     def stop(self) -> None:
-        self.__motor_right.throttle(0)
-        self.__motor_left.throttle(0)
+        self.run_motor_right(0)
+        self.run_motor_left(0)
 
     def drive_forward(self,
                       linear_velocity_ms: float,
                       distance_m: float) -> None:
-        # TODO
-        pass
+        duration_s = distance_m / linear_velocity_ms
+        scaled_velocity = linear_velocity_ms / self.__max_linear_velocity_ms
+
+        self.run_motor_right(scaled_velocity)
+        self.run_motor_left(scaled_velocity)
+        time.sleep(duration_s)
+        self.stop()
 
     def drive_backward(self,
                        linear_velocity_ms: float,
@@ -66,8 +81,8 @@ class RobotDriver:
         duration_s = distance_m / linear_velocity_ms
         scaled_velocity = linear_velocity_ms / self.__max_linear_velocity_ms
 
-        self.__motor_right.throttle(scaled_velocity)
-        self.__motor_left.throttle(-scaled_velocity)
+        self.run_motor_right(scaled_velocity)
+        self.run_motor_left(-scaled_velocity)
         time.sleep(duration_s)
         self.stop()
 
@@ -167,3 +182,6 @@ class RobotDriver:
 
 if __name__ == '__main__':
     print('start')
+    kit = MotorKit(0x40)
+    print(kit.motor1)
+    print(type(kit.motor2))
