@@ -1,3 +1,5 @@
+import pandas as pd
+
 import config as cfg
 from driver import RobotDriver
 
@@ -29,10 +31,6 @@ if __name__ == '__main__':
     left_velocities = rd.get_encoder_controller().get_left_encoder().get_velocity_records()
     right_velocities = rd.get_encoder_controller().get_right_encoder().get_velocity_records()
 
-    with open('left_velocities.txt', 'w') as f:
-        for item in left_velocities:
-            f.write("%s\n" % item)
-
-    with open('right_velocities.txt', 'w') as f:
-        for item in right_velocities:
-            f.write("%s\n" % item)
+    records = pd.DataFrame({'left_velocities': left_velocities,
+                            'right_velocities': right_velocities})
+    records.to_csv('velocities.csv')
