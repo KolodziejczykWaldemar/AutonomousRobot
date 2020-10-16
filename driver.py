@@ -73,9 +73,10 @@ class RobotDriver:
             self.__encoder_controller.update_counters()
         # time.sleep(duration_s)
         self.stop()
-        print(time.time())
+        stop_timestamp = time.time()
+        print(stop_timestamp)
         breaking_time = 1
-        while time.time() - start < breaking_time:
+        while time.time() - stop_timestamp < breaking_time:
             self.__encoder_controller.update_counters()
 
     def drive_backward(self,

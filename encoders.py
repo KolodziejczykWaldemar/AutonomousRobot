@@ -61,7 +61,7 @@ class Encoder:
     def get_timestamp_records(self):
         return self.__timestamp_records
 
-    def get_counter_record(self):
+    def get_counter_records(self):
         return self.__counter_records
 
     def get_velocity_records(self):
