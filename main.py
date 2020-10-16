@@ -43,3 +43,8 @@ if __name__ == '__main__':
                                   'timestamp': right_timestamps})
     records_left.to_csv('left.csv')
     records_right.to_csv('right.csv')
+
+    a_left = pd.DataFrame({'encoder': rd.get_encoder_controller().get_left_encoder().get_a_records()})
+    a_right = pd.DataFrame({'encoder': rd.get_encoder_controller().get_right_encoder().get_a_records()})
+    a_left.to_csv('aleft.csv')
+    a_right.to_csv('aright.csv')

@@ -27,7 +27,7 @@ class Encoder:
 
         self.__setup()
 
-        self.resolution_counter = 0
+        self.a_input_records = deque([])
 
     def __setup(self) -> None:
         GPIO.setup(self.__motor_pin_a, GPIO.IN)
@@ -35,6 +35,9 @@ class Encoder:
 
     def update_counter(self) -> None:
         a_input = GPIO.input(self.__motor_pin_a)
+
+        self.a_input_records.append(a_input)
+
         if a_input != self.__last_a_input:
             if a_input != GPIO.input(self.__motor_pin_b):
                 self.__counter += 1
@@ -45,12 +48,6 @@ class Encoder:
             self.__counter_records.append(self.__counter)
             self.__velocity_records.append(self.calculate_velocity())
             self.__timestamp_velocity_records.append(current_time)
-
-            if 0 < self.resolution_counter < 3:
-                print('resolution warning!')
-            self.resolution_counter = 0
-        else:
-            self.resolution_counter += 1
 
         self.__last_a_input = a_input
 
@@ -82,6 +79,9 @@ class Encoder:
 
     def get_velocity_records(self):
         return self.__velocity_records
+
+    def get_a_records(self):
+        return self.a_input_records
 
 
 class EncoderController:
