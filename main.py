@@ -31,7 +31,15 @@ if __name__ == '__main__':
     left_velocities = rd.get_encoder_controller().get_left_encoder().get_velocity_records()
     right_velocities = rd.get_encoder_controller().get_right_encoder().get_velocity_records()
 
-    records_left = pd.DataFrame({'left_velocities': left_velocities})
-    records_right = pd.DataFrame({'right_velocities': right_velocities})
-    records_left.to_csv('velocities_left.csv')
-    records_right.to_csv('velocities_right.csv')
+    left_counters = rd.get_encoder_controller().get_left_encoder().get_counter_records()
+    right_counters = rd.get_encoder_controller().get_right_encoder().get_counter_records()
+
+    left_timestamps = rd.get_encoder_controller().get_left_encoder().get_timestamp_records()
+    right_timestamps = rd.get_encoder_controller().get_right_encoder().get_timestamp_records()
+
+    records_left = pd.DataFrame({'counter': left_counters,
+                                 'timestamp': left_timestamps})
+    records_right = pd.DataFrame({'counter': right_counters,
+                                  'timestamp': right_timestamps})
+    records_left.to_csv('left.csv')
+    records_right.to_csv('right.csv')

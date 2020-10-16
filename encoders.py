@@ -16,8 +16,11 @@ class Encoder:
         self.__velocity_averaging_length = velocity_averaging_length
 
         self.__counter = 0
-        self.__timestamp_records = deque([time.time()], maxlen=self.__velocity_averaging_length)
-        self.__counter_records = deque([self.__counter], maxlen=self.__velocity_averaging_length)
+        # self.__timestamp_records = deque([time.time()], maxlen=self.__velocity_averaging_length)
+        # self.__counter_records = deque([self.__counter], maxlen=self.__velocity_averaging_length)
+        self.__timestamp_records = deque([time.time()])
+        self.__counter_records = deque([self.__counter])
+
         self.__velocity_records = deque([])
         self.__last_a_input = None
 
@@ -36,13 +39,15 @@ class Encoder:
                 self.__counter -= 1
             self.__timestamp_records.append(time.time())
             self.__counter_records.append(self.__counter)
-            self.__velocity_records.append(self.calculate_velocity())
+            # self.__velocity_records.append(self.calculate_velocity())
         self.__last_a_input = a_input
 
     def reset_counter(self) -> None:
         self.__counter = 0
-        self.__timestamp_records = deque([time.time()], maxlen=self.__velocity_averaging_length)
-        self.__counter_records = deque([self.__counter], maxlen=self.__velocity_averaging_length)
+        # self.__timestamp_records = deque([time.time()], maxlen=self.__velocity_averaging_length)
+        # self.__counter_records = deque([self.__counter], maxlen=self.__velocity_averaging_length)
+        self.__timestamp_records = deque([time.time()])
+        self.__counter_records = deque([self.__counter])
         self.__velocity_records = deque([])
         self.__last_a_input = None
 
