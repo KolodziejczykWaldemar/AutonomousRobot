@@ -1,4 +1,5 @@
 import time
+from copy import deepcopy
 from typing import Tuple, Union
 
 import numpy as np
@@ -34,7 +35,8 @@ class RobotDriver:
         self.__max_angular_velocity_rpm = max_angular_velocity
 
         self.__encoder_controller = encoder_controller
-        self.__pid_controller = pid_controller
+        self.__pid_controller_left = deepcopy(pid_controller)
+        self.__pid_controller_right = deepcopy(pid_controller)
 
         kit = MotorKit(0x40)
         self.__motor_right = kit.motor2 # reversed direction
@@ -63,14 +65,28 @@ class RobotDriver:
 
         encoder_steps, _ = self.convert_distance_to_encoder_steps(distance_m, round_steps=False)
         velocity_sts = encoder_steps / duration_s
-        # TODO finish it!
+        # TODO finish PID control!
+        self.__pid_controller_right.set_set_point(velocity_sts)
+        self.__pid_controller_left.set_set_point(velocity_sts)
 
         self.run_motor_right(scaled_velocity)
         self.run_motor_left(scaled_velocity)
 
         start = time.time()
-        while time.time() - start < duration_s:
+        current_time = time.time()
+        while current_time - start < duration_s:
             self.__encoder_controller.update_counters()
+
+            right_velocity_sts = self.__encoder_controller.get_right_encoder().calculate_velocity()
+            left_velocity_sts = self.__encoder_controller.get_left_encoder().calculate_velocity()
+
+            right_scaled_velocity = self.__pid_controller_right.update(right_velocity_sts, current_time)
+            left_scaled_velocity = self.__pid_controller_left.update(left_velocity_sts, current_time)
+
+            self.run_motor_right(right_scaled_velocity)
+            self.run_motor_left(left_scaled_velocity)
+
+            current_time = time.time()
         # time.sleep(duration_s)
         self.stop()
         stop_timestamp = time.time()

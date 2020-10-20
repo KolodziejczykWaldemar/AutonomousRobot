@@ -14,11 +14,10 @@ if __name__ == '__main__':
                                            right_motor_pin_b=cfg.RIGHT_MOTOR_PIN_B,
                                            encoder_resolution=cfg.ENCODER_RESOLUTION)
 
-    pid_controller = PIDController(proportional_coef=1,
-                                   integral_coef=0,
-                                   derivative_coef=0,
-                                   set_point=2,
-                                   windup_guard=20,
+    pid_controller = PIDController(proportional_coef=cfg.PID_KP,
+                                   integral_coef=cfg.PID_KI,
+                                   derivative_coef=cfg.PID_KD,
+                                   windup_guard=cfg.PID_WINDUP_GUARD,
                                    current_time=None)
 
     rd = RobotDriver(wheel_diameter=cfg.WHEEL_DIAMETER_MM,

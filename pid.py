@@ -8,7 +8,6 @@ class PIDController:
                  proportional_coef: float,
                  integral_coef: float,
                  derivative_coef: float,
-                 set_point: float,
                  windup_guard: float,
                  current_time: Optional[float] = None) -> None:
         """PID Controller class for universal control purposes.
@@ -19,16 +18,17 @@ class PIDController:
             proportional_coef (float): Proportional coefficient.
             integral_coef (float): Integral coefficient.
             derivative_coef (float): Derivative coefficient.
-            set_point (float): Point of interest, eg. target velocity.
             windup_guard (float): Critical value of integral term in main equation.
             current_time (Optional[float]): First timestamp of control in seconds.
         """
         self.__p_coef = proportional_coef
         self.__i_coef = integral_coef
         self.__d_coef = derivative_coef
-        self.__set_point = set_point
+
         self.__windup_guard = windup_guard
         self.__current_time = current_time if current_time is not None else time.time()
+
+        self.__set_point = None
 
         self.__last_time = self.__current_time
         self.__last_error = 0.0
@@ -74,3 +74,14 @@ class PIDController:
         self.__i_term = 0.0
         self.__d_term = 0.0
         self.__last_error = 0.0
+
+    def set_set_point(self, set_point: float) -> None:
+        """Setter method for new set point.
+
+        Args:
+            set_point(float): Point of interest, eg. target velocity.
+
+        Returns:
+
+        """
+        self.__set_point = set_point
