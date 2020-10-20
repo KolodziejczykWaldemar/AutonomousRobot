@@ -83,8 +83,8 @@ class RobotDriver:
             right_scaled_velocity = self.__pid_controller_right.update(right_velocity_sts, current_time)
             left_scaled_velocity = self.__pid_controller_left.update(left_velocity_sts, current_time)
 
-            self.run_motor_right(right_scaled_velocity)
-            self.run_motor_left(left_scaled_velocity)
+            self.run_motor_right(min(max(-1.0, right_scaled_velocity), 1.0))
+            self.run_motor_left(min(max(-1.0, left_scaled_velocity), 1.0))
 
             current_time = time.time()
         # time.sleep(duration_s)
