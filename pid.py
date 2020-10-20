@@ -56,8 +56,8 @@ class PIDController:
         self.__current_time = current_time if current_time is not None else time.time()
         delta_time = self.__current_time - self.__last_time
 
-        self.__p_term += self.__p_coef * error
-        self.__d_term += self.__d_coef * delta_error / delta_time
+        self.__p_term = self.__p_coef * error
+        self.__d_term = self.__d_coef * delta_error / delta_time
         self.__i_term += self.__i_term * error * delta_time
         self.__i_term = max(min(self.__windup_guard, self.__i_term), -self.__windup_guard)
 

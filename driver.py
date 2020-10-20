@@ -61,30 +61,36 @@ class RobotDriver:
                       linear_velocity_ms: float,
                       distance_m: float) -> None:
         duration_s = distance_m / linear_velocity_ms
-        scaled_velocity = linear_velocity_ms / self.__max_linear_velocity_ms
+        right_scaled_velocity = linear_velocity_ms / self.__max_linear_velocity_ms
+        left_scaled_velocity = linear_velocity_ms / self.__max_linear_velocity_ms
 
-        encoder_steps, _ = self.convert_distance_to_encoder_steps(distance_m, round_steps=False)
-        velocity_sts = encoder_steps / duration_s
-        # TODO finish PID control!
+        velocity_sts = self.convert_linear_to_steps_velocity(linear_velocity_ms)
+
         self.__pid_controller_right.set_set_point(velocity_sts)
         self.__pid_controller_left.set_set_point(velocity_sts)
 
-        self.run_motor_right(scaled_velocity)
-        self.run_motor_left(scaled_velocity)
+        self.run_motor_right(right_scaled_velocity)
+        self.run_motor_left(left_scaled_velocity)
 
         start = time.time()
         current_time = time.time()
         while current_time - start < duration_s:
             self.__encoder_controller.update_counters()
 
-            right_velocity_sts = self.__encoder_controller.get_right_encoder().calculate_velocity()
-            left_velocity_sts = self.__encoder_controller.get_left_encoder().calculate_velocity()
+            right_steps_velocity_sts = self.__encoder_controller.get_right_encoder().calculate_velocity()
+            left_steps_velocity_sts = self.__encoder_controller.get_left_encoder().calculate_velocity()
 
-            right_scaled_velocity = self.__pid_controller_right.update(right_velocity_sts, current_time)
-            left_scaled_velocity = self.__pid_controller_left.update(left_velocity_sts, current_time)
+            right_steps_velocity_sts = self.__pid_controller_right.update(right_steps_velocity_sts, current_time)
+            left_steps_velocity_sts = self.__pid_controller_left.update(left_steps_velocity_sts, current_time)
 
-            self.run_motor_right(min(max(-1.0, right_scaled_velocity), 1.0))
-            self.run_motor_left(min(max(-1.0, left_scaled_velocity), 1.0))
+            right_linear_velocity_ms = self.convert_steps_velocity_to_linear_velocity(right_steps_velocity_sts)
+            left_linear_velocity_ms = self.convert_steps_velocity_to_linear_velocity(left_steps_velocity_sts)
+
+            right_scaled_velocity = right_linear_velocity_ms / self.__max_linear_velocity_ms
+            left_scaled_velocity = left_linear_velocity_ms / self.__max_linear_velocity_ms
+
+            self.run_motor_right(max(min(1.0, right_scaled_velocity), -1.0))
+            self.run_motor_left(max(min(1.0, left_scaled_velocity), -1.0))
 
             current_time = time.time()
         # time.sleep(duration_s)
@@ -237,6 +243,14 @@ class RobotDriver:
 
         """
         return linear_velocity_ms * (2 * MM_IN_M) / self.__wheel_diameter_mm
+
+    def convert_linear_to_steps_velocity(self, linear_velocity_ms: float) -> float:
+        return linear_velocity_ms * MM_IN_M * self.__encoder_controller.get_encoder_resolution() / \
+               (self.__wheel_diameter_mm * np.pi)
+
+    def convert_steps_velocity_to_linear_velocity(self, steps_velocity_sts: float) -> float:
+        return steps_velocity_sts * self.__wheel_diameter_mm * np.pi / \
+               (MM_IN_M * self.__encoder_controller.get_encoder_resolution())
 
 
 if __name__ == '__main__':
