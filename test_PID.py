@@ -21,20 +21,33 @@ if __name__ == '__main__':
                                    windup_guard=cfg.PID_WINDUP_GUARD,
                                    current_time=None)
 
+    max_steps_velocity_sts = cfg.ENCODER_RESOLUTION * cfg.MAX_ANGULAR_VELOCITY_RPM / 60
+
     kit = MotorKit(0x40)
     left_motor = kit.motor1
-    velocity_levels = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5,
-                       0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1, 0]
-    sleep_time = 3
+    # velocity_levels = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5,
+    #                    0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1, 0]
+    velocity_levels = [1000, 2000, 3000, 4000, 5000, 6000, 0]
+    sleep_time = 5
     velocities_level_records = deque([])
     for v in velocity_levels:
-        left_motor.throttle = v
+        pid_controller.set_set_point(v)
+        left_motor.throttle = max(min(1, v / max_steps_velocity_sts), 0)
 
         start = time.time()
-        while time.time() - start < sleep_time:
+        current_time = time.time()
+        while current_time - start < sleep_time:
+
             is_updated = left_encoder.update_counter()
+
+            # PID control
+            # measured_steps_velocity_sts = left_encoder.calculate_velocity()
+            # new_steps_velocity_sts = pid_controller.update(measured_steps_velocity_sts, current_time)
+            # left_motor.throttle = max(min(1, new_steps_velocity_sts / max_steps_velocity_sts), 0)
+
             if is_updated:
                 velocities_level_records.append(v)
+            current_time = time.time()
 
     left_velocities = left_encoder.get_velocity_records()
     left_counters = left_encoder.get_counter_records()
