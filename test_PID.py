@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
     kit = MotorKit(0x40)
     left_motor = kit.motor1
-    velocity_levels = [0, 0.5, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5,
+    velocity_levels = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5,
                        0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]
     sleep_time = 2
 
@@ -39,8 +39,9 @@ if __name__ == '__main__':
     left_timestamps = left_encoder.get_timestamp_velocity_records()
 
     records_left = pd.DataFrame({'velocity_steps': left_velocities,
-                                 'velocity_ms': left_velocities * cfg.WHEEL_DIAMETER_MM * np.pi / (1000 * cfg.ENCODER_RESOLUTION),
                                  'timestamp': left_timestamps})
+    records_left['velocity_ms'] = records_left['velocity_steps'] * cfg.WHEEL_DIAMETER_MM * np.pi / (1000 * cfg.ENCODER_RESOLUTION)
+    records_left.set_index('timestamp', drop=True)
     records_left.to_csv('left.csv')
 
     a_left = pd.DataFrame({'encoder': left_encoder.get_a_records()})
