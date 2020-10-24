@@ -1,6 +1,8 @@
+import threading
 import time
 
 from collections import deque
+from typing import Tuple
 
 import RPi.GPIO as GPIO
 
@@ -9,11 +11,13 @@ class Encoder:
     def __init__(self,
                  motor_pin_a: int,
                  motor_pin_b: int,
-                 velocity_averaging_length: int = 5) -> None:
+                 velocity_averaging_length: int = 5,
+                 debug: bool = True) -> None:
 
         self.__motor_pin_a = motor_pin_a
         self.__motor_pin_b = motor_pin_b
         self.__velocity_averaging_length = velocity_averaging_length
+        self.__debug = debug
 
         self.__counter = 0
         self.__timestamp_records = deque([time.time()], maxlen=self.__velocity_averaging_length)
@@ -21,8 +25,9 @@ class Encoder:
         # self.__timestamp_records = deque([time.time()])
         # self.__counter_records = deque([self.__counter])
 
-        self.__timestamp_velocity_records = deque([])
-        self.__velocity_records = deque([])
+        if self.__debug:
+            self.__timestamp_velocity_records = deque([])
+            self.__velocity_records = deque([])
         self.__last_a_input = None
 
         self.__setup()
@@ -47,8 +52,9 @@ class Encoder:
             current_time = time.time()
             self.__timestamp_records.append(current_time)
             self.__counter_records.append(self.__counter)
-            self.__velocity_records.append(self.calculate_velocity())
-            self.__timestamp_velocity_records.append(current_time)
+            if self.__debug:
+                self.__velocity_records.append(self.calculate_velocity())
+                self.__timestamp_velocity_records.append(current_time)
             is_updated = True
 
         self.__last_a_input = a_input
@@ -60,13 +66,17 @@ class Encoder:
         self.__counter_records = deque([self.__counter], maxlen=self.__velocity_averaging_length)
         # self.__timestamp_records = deque([time.time()])
         # self.__counter_records = deque([self.__counter])
-        self.__timestamp_velocity_records = deque([])
-        self.__velocity_records = deque([])
+        if self.__debug:
+            self.__timestamp_velocity_records = deque([])
+            self.__velocity_records = deque([])
         self.__last_a_input = None
 
     def calculate_velocity(self):
         return (self.__counter_records[-1] - self.__counter_records[0]) / \
                (self.__timestamp_records[-1] - self.__timestamp_records[0])
+
+    def get_timestamp(self):
+        return self.__timestamp_records[-1]
 
     def get_counter(self):
         return self.__counter
@@ -85,6 +95,30 @@ class Encoder:
 
     def get_a_records(self):
         return self.a_input_records
+
+
+class EncoderCounter(threading.Thread):
+    def __init__(self, encoder: Encoder) -> None:
+        threading.Thread.__init__(self)
+
+        self.encoder = encoder
+        self.timestamp = 0
+        self.velocity = 0
+
+        self.alive = False
+
+    def run(self) -> None:
+        self.alive = True
+        while self.alive:
+            is_updated = self.encoder.update_counter()
+            self.timestamp = self.encoder.get_timestamp()
+            self.velocity = self.encoder.calculate_velocity()
+
+    def get_velocity(self) -> Tuple[float, float]:
+        return self.timestamp, self.velocity
+
+    def finish(self) -> None:
+        self.alive = False
 
 
 class EncoderController:
