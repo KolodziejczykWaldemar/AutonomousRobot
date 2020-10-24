@@ -33,7 +33,8 @@ class Encoder:
         GPIO.setup(self.__motor_pin_a, GPIO.IN)
         GPIO.setup(self.__motor_pin_b, GPIO.IN)
 
-    def update_counter(self) -> None:
+    def update_counter(self) -> bool:  # TODO added returning
+        is_updated = False
         a_input = GPIO.input(self.__motor_pin_a)
 
         self.a_input_records.append(a_input)
@@ -48,8 +49,10 @@ class Encoder:
             self.__counter_records.append(self.__counter)
             self.__velocity_records.append(self.calculate_velocity())
             self.__timestamp_velocity_records.append(current_time)
+            is_updated = True
 
         self.__last_a_input = a_input
+        return is_updated
 
     def reset_counter(self) -> None:
         self.__counter = 0

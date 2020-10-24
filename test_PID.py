@@ -32,12 +32,16 @@ if __name__ == '__main__':
 
         start = time.time()
         while time.time() - start < sleep_time:
-            left_encoder.update_counter()
-            velocities_level_records.append(v)
+            is_updated = left_encoder.update_counter()
+            if is_updated:
+                velocities_level_records.append(v)
 
     left_velocities = left_encoder.get_velocity_records()
     left_counters = left_encoder.get_counter_records()
     left_timestamps = left_encoder.get_timestamp_velocity_records()
+
+    print(len(left_velocities))
+    print(len(velocities_level_records))
 
     records_left = pd.DataFrame({'velocity_steps': left_velocities,
                                  'velocity_levels': velocities_level_records,
