@@ -7,7 +7,7 @@ from typing import Tuple
 import RPi.GPIO as GPIO
 
 
-class Encoder:
+class OldEncoder:
     def __init__(self,
                  motor_pin_a: int,
                  motor_pin_b: int,
@@ -89,6 +89,92 @@ class Encoder:
 
     def get_counter_records(self):
         return self.__counter_records
+
+    def get_velocity_records(self):
+        return self.__velocity_records
+
+    def get_a_records(self):
+        return self.a_input_records
+
+
+class Encoder:
+    def __init__(self,
+                 motor_pin_a: int,
+                 motor_pin_b: int,
+                 sampling_time_s: float = 0.01,
+                 debug: bool = True) -> None:
+
+        self.__motor_pin_a = motor_pin_a
+        self.__motor_pin_b = motor_pin_b
+        self.__sampling_time_s = sampling_time_s
+        self.__debug = debug
+
+        self.__counter = 0
+        self.__last_counter = 0
+        self.__last_timestamp = time.time()
+        self.__velocity = 0
+
+        if self.__debug:
+            self.__timestamp_velocity_records = deque([])
+            self.__velocity_records = deque([])
+        self.__last_a_input = None
+
+        self.__setup()
+
+        self.a_input_records = deque([])
+
+    def __setup(self) -> None:
+        GPIO.setup(self.__motor_pin_a, GPIO.IN)
+        GPIO.setup(self.__motor_pin_b, GPIO.IN)
+
+    def update_counter(self) -> bool:  # TODO added returning
+        is_updated = False
+        a_input = GPIO.input(self.__motor_pin_a)
+
+        self.a_input_records.append(a_input)
+        current_time = time.time()
+
+        if a_input != self.__last_a_input:
+            if a_input != GPIO.input(self.__motor_pin_b):
+                self.__counter += 1
+            else:
+                self.__counter -= 1
+
+            is_updated = True
+
+        if current_time - self.__last_timestamp >= self.__sampling_time_s:
+            self.__velocity = (self.__counter - self.__last_counter) / (current_time - self.__last_timestamp)
+            self.__last_timestamp = current_time
+            self.__last_counter = self.__counter
+
+            if self.__debug:
+                self.__velocity_records.append(self.__velocity)
+                self.__timestamp_velocity_records.append(current_time)
+
+        self.__last_a_input = a_input
+        return is_updated
+
+    def reset_counter(self) -> None:
+        self.__counter = 0
+        self.__last_counter = 0
+        self.__last_timestamp = time.time()
+
+        if self.__debug:
+            self.__timestamp_velocity_records = deque([])
+            self.__velocity_records = deque([])
+        self.__last_a_input = None
+
+    def calculate_velocity(self):
+        return self.__velocity
+
+    def get_timestamp(self):
+        return self.__last_timestamp
+
+    def get_counter(self):
+        return self.__counter
+
+    def get_timestamp_velocity_records(self):
+        return self.__timestamp_velocity_records
 
     def get_velocity_records(self):
         return self.__velocity_records

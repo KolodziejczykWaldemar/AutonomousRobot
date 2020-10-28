@@ -10,10 +10,10 @@ from encoders import Encoder, EncoderCounter
 from pid import PIDController
 
 
-def test_pid(kp, ki, kd):
+def test_pid(kp, ki, kd, stime, use_pid=True):
     left_encoder = Encoder(motor_pin_a=cfg.LEFT_MOTOR_PIN_A,
                            motor_pin_b=cfg.LEFT_MOTOR_PIN_B,
-                           velocity_averaging_length=30)
+                           sampling_time_s=stime)
 
     left_encoder_counter = EncoderCounter(encoder=left_encoder)
     left_encoder_counter.start()
@@ -28,9 +28,9 @@ def test_pid(kp, ki, kd):
 
     kit = MotorKit(0x40)
     left_motor = kit.motor1
-    # velocity_levels = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5,
-    #                    0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1, 0]
+
     velocity_levels = [1000, 2000, 3000, 4000, 5000, 6000, 0]
+    velocity_levels = [3000, 0]
     sleep_time = 5
 
     velocities_level_records = deque([])
@@ -50,11 +50,14 @@ def test_pid(kp, ki, kd):
             timestamp, measured_steps_velocity_sts = left_encoder_counter.get_velocity()
 
             # PID control
-            new_steps_velocity_sts = pid_controller.update(measured_steps_velocity_sts, current_time)
-            left_motor.throttle = max(min(1, new_steps_velocity_sts / max_steps_velocity_sts), 0)
+            if use_pid:
+                new_steps_velocity_sts = pid_controller.update(-measured_steps_velocity_sts, current_time)
+                left_motor.throttle = max(min(1, new_steps_velocity_sts / max_steps_velocity_sts), 0)
+            else:
+                new_steps_velocity_sts = -1
 
             velocities_level_records.append(v)
-            velocities_steps_records.append(measured_steps_velocity_sts)
+            velocities_steps_records.append(-measured_steps_velocity_sts)
             pid_velocities_steps_records.append(new_steps_velocity_sts)
             timestamps_records.append(timestamp)
 
@@ -73,8 +76,13 @@ def test_pid(kp, ki, kd):
 
 
 if __name__ == '__main__':
-    for kp in [0, 0.2, 0.4, 0.6, 0.8, 1.0]:
-        for ki in [0, 0.2, 0.4, 0.6, 0.8, 1.0]:
-            for kd in [0, 0.2, 0.4, 0.6, 0.8, 1.0]:
-                records = test_pid(kp, ki, kd)
-                records.to_csv('kp_{}_ki_{}_kd_{}.csv'.format(kp, ki, kd))
+    # for kp in [0, 0.2, 0.4, 0.6, 0.8, 1.0]:
+    #     for ki in [0, 0.2, 0.4, 0.6, 0.8, 1.0]:
+    #         for kd in [0, 0.2, 0.4, 0.6, 0.8, 1.0]:
+    #
+    #             records = test_pid(kp, ki, kd)
+    #             records.to_csv('kp_{}_ki_{}_kd_{}.csv'.format(kp, ki, kd))
+
+    for t in [0.001, 0.01, 0.1]:
+        records = test_pid(0, 0, 0, t, False)
+        records.to_csv('kp_{}_ki_{}_kd_{}_t_{}.csv'.format(0, 0, 0, t))
